@@ -1,4 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
+using CommunityToolkit.Mvvm.DependencyInjection;
+
+#if ANDROID
+using Puppeteer.Platforms.Android;
+#endif
 using Uno.Resizetizer;
 
 namespace Puppeteer;
@@ -15,7 +20,7 @@ public partial class App : Application
     }
 
     protected Window? MainWindow { get; private set; }
-    protected IHost? Host { get; private set; }
+    public IHost? Host { get; private set; }
 
     [SuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "Uno.Extensions APIs are used in a way that is safe for trimming in this template context.")]
     protected async override void OnLaunched(LaunchActivatedEventArgs args)
@@ -77,9 +82,13 @@ public partial class App : Application
                 {
                     // TODO: Register your services
                     //services.AddSingleton<IMyService, MyService>();
+
+
                 })
                 .UseNavigation(RegisterRoutes)
             );
+
+      
         MainWindow = builder.Window;
 
 #if DEBUG
@@ -88,6 +97,7 @@ public partial class App : Application
         MainWindow.SetWindowIcon();
 
         Host = await builder.NavigateAsync<Shell>();
+
     }
 
     private static void RegisterRoutes(IViewRegistry views, IRouteRegistry routes)
