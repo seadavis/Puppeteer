@@ -16,15 +16,7 @@ public partial class MainViewModel : ObservableObject
         Title = "Main";
         Title += $" - {localizer["ApplicationName"]}";
         Title += $" - {appInfo?.Value?.Environment}";
-        GoToSecond = new AsyncRelayCommand(GoToSecondView);
     }
     public string? Title { get; }
-
-    public ICommand GoToSecond { get; }
-
-    private async Task GoToSecondView()
-    {
-        await _navigator.NavigateViewModelAsync<SecondViewModel>(this, data: new Entity(Name!));
-    }
 
 }

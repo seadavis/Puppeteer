@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset="utf-8">
+   <title>Stick Rig</title>
+
+   <style>
+      html, body {
+         width: 100%;
+         height: 100%;
+         margin: 0;
+         overflow: hidden;
+         background: #111;
+      }
+
+      canvas {
+         width: 100%;
+         height: 100%;
+         touch-action: none;
+      }
+   </style>
+
+   <script src="https://cdn.babylonjs.com/babylon.js"></script>
+</head>
+
+<body>
+   <canvas id="renderCanvas"></canvas>
+
+   <script>
+      const canvas = document.getElementById("renderCanvas");
+      const engine = new BABYLON.Engine(canvas, true);
+
+      function cyl(name, h, r) {
+         const m = BABYLON.MeshBuilder.CreateCylinder(name, {
+            height: h,
+            diameter: r
+         });
+         return m;
+      }
+
+      function node(name, parent, x, y, z) {
+         const n = new BABYLON.TransformNode(name);
+         n.parent = parent || null;
+         n.position.set(x || 0, y || 0, z || 0);
+         return n;
+      }
+
+      function createScene() {
+         const scene = new BABYLON.Scene(engine);
+
+         const camera = new BABYLON.ArcRotateCamera(
+            "cam",
+            Math.PI / 2,
+            Math.PI / 3,
+            8,
+            new BABYLON.Vector3(0, 1.5, 0),
+            scene
+         );
+         camera.attachControl(canvas, true);
+
+         new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+
+         const mat = new BABYLON.StandardMaterial("mat", scene);
+         mat.diffuseColor = new BABYLON.Color3(0.2, 0.9, 1);
+
+         // ======================
+         // ROOT: PELVIS
+         // ======================
+         const pelvis = node("pelvis", null, 0, 1.2, 0);
+
+         const waist = node("waist", pelvis, 0, 0.6, 0);
+         const chest = node("chest", waist, 0, 0.8, 0);
+         const neck = node("neck", chest, 0, 0.6, 0);
+
+         // ======================
+         // HEAD
+         // ======================
+         const head = BABYLON.MeshBuilder.CreateSphere("head", { diameter: 0.7 }, scene);
+         head.material = mat;
+         head.parent = neck;
+         head.position.y = 0.4;
+
+         // ======================
+         // SPINE VISUALS
+         // ======================
+         const spine = cyl("spine", 1.2, 0.35);
+         spine.material = mat;
+         spine.parent = chest;
+         spine.position.y = 0.3;
+
+         const pelvisMesh = cyl("pelvisMesh", 0.6, 0.4);
+         pelvisMesh.material = mat;
+         pelvisMesh.parent = pelvis;
+         pelvisMesh.position.y = 0;
+
+         // ======================
+         // SHOULDERS
+         // ======================
+         const lShoulder = node("lShoulder", chest, -0.7, 0.7, 0);
+         const rShoulder = node("rShoulder", chest, 0.7, 0.7, 0);
+
+         // ======================
+         // ARMS (upper + forearm)
+         // ======================
+         function arm(sideNode, prefix, dir) {
+
+            const upper = cyl(prefix + "_upper", 0.9, 0.25);
+            upper.material = mat;
+            upper.parent = sideNode;
+            upper.position.y = -0.45;
+
+            const elbow = node(prefix + "_elbow", upper, 0, -0.45, 0);
+
+            const fore = cyl(prefix + "_forearm", 0.9, 0.23);
+            fore.material = mat;
+            fore.parent = elbow;
+            fore.position.y = -0.45;
+         }
+
+         arm(lShoulder, "L", -1);
+         arm(rShoulder, "R", 1);
+
+         // ======================
+         // HIPS
+         // ======================
+         const lHip = node("lHip", pelvis, -0.3, 0, 0);
+         const rHip = node("rHip", pelvis, 0.3, 0, 0);
+
+         // ======================
+         // LEGS (thigh + shin)
+         // ======================
+         function leg(hipNode, prefix) {
+
+            const thigh = cyl(prefix + "_thigh", 1.0, 0.3);
+            thigh.material = mat;
+            thigh.parent = hipNode;
+            thigh.position.y = -0.5;
+
+            const knee = node(prefix + "_knee", thigh, 0, -0.5, 0);
+
+            const shin = cyl(prefix + "_shin", 1.0, 0.28);
+            shin.material = mat;
+            shin.parent = knee;
+            shin.position.y = -0.5;
+         }
+
+         leg(lHip, "L");
+         leg(rHip, "R");
+
+         return scene;
+      }
+
+      const scene = createScene();
+      engine.runRenderLoop(() => scene.render());
+      window.addEventListener("resize", () => engine.resize());
+   </script>
+
+</body>
+</html>
