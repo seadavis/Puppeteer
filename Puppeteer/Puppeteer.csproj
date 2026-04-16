@@ -44,5 +44,5 @@
     <ItemGroup Condition="'$(TargetFramework)'=='net8.0-android'">
         <Compile Include="Platforms\Android\**\*.cs" />
     </ItemGroup>
-
+    
 </Project>

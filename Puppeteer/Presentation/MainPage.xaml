@@ -18,7 +18,7 @@
       <utu:NavigationBar Content="{Binding Title}" />
 
             <WebView2 Grid.Row="1" x:Name="SceneView" Height="800" Width="600" />
-            <Image Grid.Row="2" Name="CameraImage" Height="640" Width="480" HorizontalAlignment="Right"></Image>
-      </Grid>
+            <Border Grid.Row="2" x:Name="ImageBorder" Height="400" Width="400"></Border>
+        </Grid>
   </ScrollViewer>
 </Page>

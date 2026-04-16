@@ -1,6 +1,11 @@
 using System.Runtime.InteropServices.WindowsRuntime;
 using CommunityToolkit.Mvvm.DependencyInjection;
 using Microsoft.UI.Xaml.Media.Imaging;
+using SkiaSharp;
+using Google.Android.Material.Slider;
+using Uno.WinUI.Graphics2DSK;
+
+
 
 #if ANDROID
 using Puppeteer.Platforms.Android;
@@ -11,14 +16,18 @@ namespace Puppeteer.Presentation;
 public sealed partial class MainPage : Page
 {
     private ICameraService _cameraService;
-    private WriteableBitmap _bitmap;
+    private SKCanvasElementImpl _canvas;
 
     public MainPage()
     {
         try
         {
-            this.InitializeComponent(); ;
-            _bitmap = new WriteableBitmap(640, 480);
+            this.InitializeComponent();
+            if(SKCanvasElement.IsSupportedOnCurrentPlatform())
+            {
+                _canvas = new SKCanvasElementImpl();
+                ImageBorder.Child = _canvas;
+            }
         }
         catch (Exception ex)
         {
@@ -33,18 +42,7 @@ public sealed partial class MainPage : Page
 
     private void _cameraService_OnFrame(byte[] rgb)
     {
-        _ = DispatcherQueue.TryEnqueue(() =>
-        {
-            using (var stream = _bitmap.PixelBuffer.AsStream())
-            {
-                stream.Seek(0, SeekOrigin.Begin);
-
-                // RGB from camera service (RGBRGBRGB...)
-                stream.Write(rgb, 0, Math.Min(rgb.Length, 640 * 480 * 3));
-            }
-
-            _bitmap.Invalidate();
-        });
+        _canvas.JpegImageBytes = rgb;
     }
 
     private async Task StartAsyncSafe()
@@ -77,8 +75,6 @@ public sealed partial class MainPage : Page
 
     private void Page_Loaded(object sender, RoutedEventArgs e)
     {
-        CameraImage.Source = _bitmap;
-
         _ = Task.Run(StartAsyncSafe);
 
     }

@@ -64,62 +64,6 @@ public class CameraService : ICameraService
         _context = context;
     }
 
-    private byte[] ConvertYuvToRgb(Image image)
-    {
-        var width = image.Width;
-        var height = image.Height;
-
-        var yPlane = image.GetPlanes()[0].Buffer;
-        var uPlane = image.GetPlanes()[1].Buffer;
-        var vPlane = image.GetPlanes()[2].Buffer;
-
-        var yBytes = new byte[yPlane.Remaining()];
-        var uBytes = new byte[uPlane.Remaining()];
-        var vBytes = new byte[vPlane.Remaining()];
-
-        yPlane.Get(yBytes);
-        uPlane.Get(uBytes);
-        vPlane.Get(vBytes);
-
-        var rgb = new byte[width * height * 3];
-
-        int uvIndex = 0;
-
-        for (int y = 0; y < height; y++)
-        {
-            int yRow = y * width;
-
-            for (int x = 0; x < width; x++)
-            {
-                int yIndex = yRow + x;
-
-                int Y = yBytes[yIndex] & 0xFF;
-
-                int uvPos = (y / 2) * (width / 2) + (x / 2);
-
-                int U = uBytes[uvPos] & 0xFF;
-                int V = vBytes[uvPos] & 0xFF;
-
-                // YUV → RGB (simple formula)
-                int C = Y - 16;
-                int D = U - 128;
-                int E = V - 128;
-
-                int R = (298 * C + 409 * E + 128) >> 8;
-                int G = (298 * C - 100 * D - 208 * E + 128) >> 8;
-                int B = (298 * C + 516 * D + 128) >> 8;
-
-                int rgbIndex = yIndex * 3;
-
-                rgb[rgbIndex + 0] = (byte)Math.Clamp(R, 0, 255);
-                rgb[rgbIndex + 1] = (byte)Math.Clamp(G, 0, 255);
-                rgb[rgbIndex + 2] = (byte)Math.Clamp(B, 0, 255);
-            }
-        }
-
-        return rgb;
-    }
-
     private static LensFacing GetLensFacing(CameraCharacteristics c)
     {
         var obj = c.Get(CameraCharacteristics.LensFacing);
@@ -160,9 +104,9 @@ public class CameraService : ICameraService
             var cameraId = GetBackCameraId(manager);
 
             _reader = ImageReader.NewInstance(
-                640, 480,
+                400, 400,
                 ImageFormatType.Jpeg,
-                2);
+                4);
 
             _reader.SetOnImageAvailableListener(new Listener(this), handler);
 
@@ -211,16 +155,22 @@ public class CameraService : ICameraService
 
     private void HandleImage(Image image)
     {
-       
-        var buffer = image.GetPlanes()[0].Buffer;
-        image.Close();
 
-        byte[] jpeg = new byte[buffer.Remaining()];
-        buffer.Get(jpeg);
+        byte[] jpeg;
+
+        try
+        {
+            var buffer = image.GetPlanes()[0].Buffer;
+
+            jpeg = new byte[buffer.Remaining()];
+            buffer.Get(jpeg);
+        }
+        finally
+        {
+            image.Close();
+        }
 
         OnFrame?.Invoke(jpeg);
-
-
     }
 
     private class Listener : Java.Lang.Object, ImageReader.IOnImageAvailableListener
